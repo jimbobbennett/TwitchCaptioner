@@ -4,29 +4,20 @@ import azure.cognitiveservices.speech as speechsdk
 from tkinter import *
 import tkinter as tk
 
-lastText = ""
+timestr = time.strftime("%Y%m%d-%H%M%S")
+f = open('captions' + timestr + '.txt', 'a', buffering=1)
 appHeight = 150
 padding = 20
 labelText = NONE
 
 def recognizing(args):
     global labelText
-    global lastText
+    labelText.set(args.result.text)
 
-    latestText = args.result.text
-
-    if  len(latestText) < len(lastText):
-        print(latestText)
-    else:
-        diff = latestText[len(lastText):]
-        print(diff)
-
-    labelText.set(latestText)
-
-class App:
-
-    def __init__(self, master):
-        print("Say something...")
+def recognized(args):
+    global f
+    if args.result.text.strip() != '':
+        f.write(args.result.text + "\n")
 
 root = Tk()
 labelText = StringVar()
@@ -48,7 +39,7 @@ label = Label(root, textvariable=labelText,
               justify=LEFT, anchor=SW, wraplength=labelWidth)
 label.pack(padx=padding, pady=padding)
 
-app = App(root)
+root.attributes('-topmost', True)
 
 speech_config = speechsdk.SpeechConfig(subscription=config.speech_key, region=config.service_region)
 
@@ -59,6 +50,7 @@ else:
     speech_recognizer = speechsdk.SpeechRecognizer(speech_config=speech_config, audio_config=audio_config)
 
 speech_recognizer.recognizing.connect(recognizing)
+speech_recognizer.recognized.connect(recognized)
 speech_recognizer.start_continuous_recognition()
 
 root.mainloop()
